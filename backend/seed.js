@@ -1,6 +1,6 @@
-// One-time script to create employee accounts directly in the database.
-// Run this from Railway's Console tab on the backend service: node seed.js
-require('dotenv').config();
+// Creates the initial employee accounts if they don't already exist.
+// Safe to run every startup — it skips any account that's already there.
+// Can also still be run standalone: node seed.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
@@ -21,34 +21,33 @@ const USERS = [
 ];
 
 async function run() {
-  await mongoose.connect(process.env.MONGO_URI);
-  console.log('Connected to MongoDB');
-
   for (const u of USERS) {
     const email = u.email.toLowerCase();
     const existing = await Employee.findOne({ email });
     if (existing) {
-      console.log(`SKIP (already exists): ${email}`);
+      console.log(`[seed] SKIP (already exists): ${email}`);
       continue;
     }
     const hashed = await bcrypt.hash(PASSWORD, 10);
     const employeeCode = 'EMP-' + crypto.randomBytes(4).toString('hex').toUpperCase();
-    await Employee.create({
-      name: u.name,
-      email,
-      password: hashed,
-      role: u.role,
-      employeeCode,
-    });
-    console.log(`CREATED (${u.role}): ${email}`);
+    await Employee.create({ name: u.name, email, password: hashed, role: u.role, employeeCode });
+    console.log(`[seed] CREATED (${u.role}): ${email}`);
   }
-
-  console.log('Done. You can now log in with any of the emails above and password: ' + PASSWORD);
-  await mongoose.disconnect();
-  process.exit(0);
+  console.log('[seed] Done.');
 }
 
-run().catch((e) => {
-  console.error('Seed failed:', e.message);
-  process.exit(1);
-});
+module.exports = { run };
+
+// Allow standalone use too: node seed.js (connects/disconnects on its own in that case)
+if (require.main === module) {
+  require('dotenv').config();
+  mongoose
+    .connect(process.env.MONGO_URI)
+    .then(run)
+    .then(() => mongoose.disconnect())
+    .then(() => process.exit(0))
+    .catch((e) => {
+      console.error('[seed] Failed:', e.message);
+      process.exit(1);
+    });
+}
