@@ -1,0 +1,87 @@
+services:
+  # ── Database ────────────────────────────────────────────────────────────
+  # Self-hosted MongoDB running as a Render private service with a
+  # persistent disk. Only reachable from other services in this project via
+  # its internal hostname "qr-attendance-mongo" — not exposed publicly.
+  # Requires a paid Render plan (persistent disks aren't on the free tier).
+  - type: pserv
+    name: qr-attendance-mongo
+    runtime: image
+    image:
+      url: docker.io/library/mongo:7
+    plan: starter
+    region: oregon
+    disk:
+      name: mongo-data
+      mountPath: /data/db
+      sizeGB: 1
+    envVars:
+      - key: MONGO_INITDB_DATABASE
+        value: qr_attendance
+
+  # ── Backend API ─────────────────────────────────────────────────────────
+  - type: web
+    name: qr-attendance-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: starter
+    region: oregon
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: MONGO_URI
+        value: mongodb://qr-attendance-mongo:27017/qr_attendance
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 8h
+      - key: QR_SECRET
+        generateValue: true
+      - key: QR_TOKEN_TTL_MINUTES
+        value: 60
+      - key: OFFICE_LAT
+        value: 17.4239
+      - key: OFFICE_LNG
+        value: 78.5480
+      - key: OFFICE_RADIUS_METERS
+        value: 200
+      - key: CHECKIN_START
+        value: "10:00"
+      - key: CHECKIN_LATE_AFTER
+        value: "10:20"
+      - key: CHECKOUT_START
+        value: "17:30"
+      - key: CHECKOUT_END
+        value: "18:30"
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      # Set this AFTER the frontend service below has deployed and you know
+      # its URL, e.g. https://qr-attendance-frontend.onrender.com
+      - key: FRONTEND_URL
+        sync: false
+
+  # ── Frontend (Next.js) ──────────────────────────────────────────────────
+  - type: web
+    name: qr-attendance-frontend
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    plan: starter
+    region: oregon
+    envVars:
+      # Baked into the Next.js build via the Dockerfile's ARG/ENV — must be
+      # set BEFORE the first deploy of this service, since NEXT_PUBLIC_*
+      # vars can't be changed at runtime without a rebuild.
+      # Use the qr-attendance-backend service's public URL + "/api".
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
