@@ -2,7 +2,11 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    // Build MongoDB URI with proper format
+    const mongoUri = process.env.MONGO_URI || 
+      `mongodb://qr-attendance-mongo.railway.internal:27017/qr_attendance`;
+    
+    await mongoose.connect(mongoUri);
     console.log('MongoDB connected');
   } catch (err) {
     console.error('MongoDB connection error:', err.message);
