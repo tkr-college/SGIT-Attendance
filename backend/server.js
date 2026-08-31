@@ -15,14 +15,13 @@ const { markAbsentees } = require('./controllers/adminController');
 
 const app = express();
 
-connectDB().then(() => {
-  try {
-    require('./seed').run().catch((e) => console.error('Seed run failed:', e.message));
-  } catch (e) {
-    console.error('Seed file not found or failed to load:', e.message);
-  }
-});
-
+   connectDB().then(() => {
+     try {
+       require('./seed').run().catch((e) => console.error('Seed run failed:', e.message));
+     } catch (e) {
+       console.error('Seed file not found or failed to load:', e.message);
+     }
+   });
 app.use(helmet());
 app.use(cors({ origin: process.env.FRONTEND_URL || '*', credentials: true }));
 app.use(express.json());
