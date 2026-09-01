@@ -57,7 +57,7 @@ export default function Scan() {
     try {
       await qr.start(
         { facingMode: 'environment' },
-        { fps: 10, qrbox: 250 },
+        { fps: 10, qrbox: 280, aspectRatio: 1.0 },
         (decodedText) => handleDecoded(decodedText),
         () => {} // ignore per-frame scan failures
       );
@@ -136,3 +136,4 @@ export default function Scan() {
     </Layout>
   );
 }
+
