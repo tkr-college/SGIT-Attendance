@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/router';
 import Layout from '../../components/Layout';
 import api, { getDeviceId } from '../../lib/api';
 import toast from 'react-hot-toast';
 
 export default function Scan() {
+  const router = useRouter();
   const [action, setAction] = useState('check-in');
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState(null);
@@ -36,6 +38,9 @@ export default function Scan() {
       });
       setResult({ ok: true, message: data.message, record: data.record });
       toast.success(data.message);
+      setTimeout(() => {
+        router.push('/employee');
+      }, 2000);
     } catch (err) {
       const msg = err?.response?.data?.message || err.message || 'Scan failed';
       setResult({ ok: false, message: msg });
@@ -108,8 +113,18 @@ export default function Scan() {
         </div>
 
         {result && (
-          <div className={`mt-4 p-3 rounded-xl text-sm ${result.ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-            {result.message}
+          <div
+            className={`mt-4 p-6 rounded-xl text-center ${
+              result.ok
+                ? 'bg-green-50 text-green-700 border border-green-200'
+                : 'bg-red-50 text-red-700 border border-red-200'
+            }`}
+          >
+            <div className="text-4xl mb-2">{result.ok ? '✅' : '❌'}</div>
+            <div className="text-lg font-semibold">{result.message}</div>
+            {result.ok && (
+              <div className="text-sm text-green-600 mt-2">Taking you to your dashboard...</div>
+            )}
           </div>
         )}
 
