@@ -11,7 +11,7 @@ exports.getMe = async (req, res) => {
 exports.getMyQr = async (req, res) => {
   try {
     const token = generateQrToken(req.user.employeeCode);
-    const qrDataUrl = await QRCode.toDataURL(token, { errorCorrectionLevel: 'H', margin: 1, width: 320 });
+    const qrDataUrl = await QRCode.toDataURL(token, { errorCorrectionLevel: 'M', margin: 4, width: 400 });
     res.json({ qrDataUrl, expiresInMinutes: TTL_MINUTES });
   } catch (err) {
     res.status(500).json({ message: err.message });
